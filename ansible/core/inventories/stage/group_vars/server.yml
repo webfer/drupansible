@@ -16,6 +16,8 @@ ansible_ssh_user: xxxxx
 ansible_remote_host: xxxxx
 ansible_remote_host_port: xxxxx
 vault_theme_name: xxxxx
+vault_htpasswd_user: xxxxx
+vault_htpasswd_pass: 'xxxxx'
 # Allowed Variables
 
 # vault_database_name: Database name.
@@ -33,3 +35,5 @@ vault_theme_name: xxxxx
 # ansible_remote_host: IP address or the server domain. Example: sv5017.byethost5017.org
 # ansible_remote_host_port: Server port. Example: 61022
 # vault_theme_name: Custom theme name - If you are using https://www.drupal.org/project/drupy the value for this variable should be "drupy" or your custom theme name.
+# vault_htpasswd_user: ONLY in Stage environment. It must be htpasswd uer by default: Exmaple: myhtpasswduser
+# vault_htpasswd_pass: ONLY in Stage environment. Drupal htpasswd. (we recommend you use bcrypt hash for the password. You can generarte it using this command in the terminal: htpasswd -nbBC 12 myhtpasswduser mypassword123)
