@@ -1,0 +1,28 @@
+---
+# Grant permissions before cleanup.
+- name: Get list of releases to clean up
+  shell: 'ls -1dt {{ project_web_releases_dir }}* | tail -n +3'
+  register: old_releases
+  ignore_errors: true
+  tags:
+    - clean_up
+
+- name: Ensure old releases variable is defined
+  set_fact:
+    old_releases_list: '{{ old_releases.stdout_lines if old_releases.stdout_lines else [] }}'
+  tags:
+    - clean_up
+
+- name: Change ownership of old release files
+  command: chown -R {{ vault_server_domain }}:{{ vault_server_client }} {{ item }}
+  with_items: '{{ old_releases_list }}'
+  when: old_releases_list | length > 0
+  tags:
+    - clean_up
+
+- name: Change permissions of old release files
+  command: chmod -R 755 {{ item }}
+  with_items: '{{ old_releases_list }}'
+  when: old_releases_list | length > 0
+  tags:
+    - clean_up

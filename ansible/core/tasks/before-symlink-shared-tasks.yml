@@ -1,0 +1,215 @@
+---
+# before-symlink-shared-tasks
+
+# Database backup
+- name: Clearing Drupal cache using Drush on current release
+  shell: |
+    /{{vault_server_root_path}}/{{ vault_server_client }}/{{ vault_server_domain }}/current/vendor/bin/drush cr
+  args:
+    chdir: '{{ ansistrano_current_dir }}'
+    executable: /bin/bash
+  tags:
+    - import_config
+
+- name: Ensure backup directory exists
+  file:
+    path: '/{{vault_server_root_path}}/{{ vault_server_client }}/{{ vault_server_domain }}/private/db_backups'
+    state: directory
+    owner: '{{ vault_server_domain }}'
+    group: '{{ vault_server_client }}'
+    mode: '0750'
+  tags:
+    - import_config
+
+- name: Dump Drupal MySQL database before update database
+  shell: |
+    mysqldump -u {{ vault_database_user }} -p'{{ vault_database_password }}' \
+    -h 127.0.0.1 -P {{ vault_database_port }} {{ vault_database_name }} \
+    | gzip > /{{vault_server_root_path}}/{{ vault_server_client }}/{{ vault_server_domain }}/private/db_backups/db_backup_{{ ansible_date_time.iso8601_basic | regex_replace('T', '_') | regex_replace('\\..*$', '') }}.sql.gz
+  args:
+    executable: /bin/bash
+  tags:
+    - import_config
+
+# Clean up old backups (keep 5 newest)
+- name: Find all database backup files
+  find:
+    paths: '/{{vault_server_root_path}}/{{ vault_server_client }}/{{ vault_server_domain }}/private/db_backups'
+    patterns: 'db_backup_*.sql.gz'
+    age: 0
+    age_stamp: mtime
+    recurse: no
+  register: db_backups
+  tags:
+    - import_config
+
+- name: Determine old database backups to remove
+  set_fact:
+    backups_to_remove: >-
+      {{ (db_backups.files | sort(attribute='mtime', reverse=true) | map(attribute='path') | list)[vault_backup_keep_count:] }}
+  tags:
+    - import_config
+
+- name: Remove old database backups
+  file:
+    path: '{{ item }}'
+    state: absent
+  loop: '{{ backups_to_remove }}'
+  when: backups_to_remove | length > 0
+  tags:
+    - import_config
+
+# Set permissions
+- name: Set directory permissions for release_drupal_path
+  file:
+    path: '{{ ansistrano_current_dir }}'
+    mode: '0755'
+    state: directory
+    recurse: yes
+
+- name: Set directory permissions for ansistrano_shared_path
+  file:
+    path: '{{ ansistrano_release_path.stdout }}/default/files'
+    mode: '0755'
+    state: directory
+    owner: '{{ vault_server_domain }}'
+    group: '{{ vault_server_client }}'
+    recurse: true
+
+- name: Ensure properly permissions to vendor's directory
+  file:
+    path: '{{ ansistrano_release_path.stdout }}/vendor'
+    mode: '0755'
+    state: directory
+    owner: '{{ vault_server_domain }}'
+    group: '{{ vault_server_client }}'
+    recurse: true
+
+- name: Ensure properly permissions to Drupal's root /web directory
+  file:
+    path: '{{ ansistrano_release_path.stdout }}/web'
+    mode: '0755'
+    state: directory
+    owner: '{{ vault_server_domain }}'
+    group: '{{ vault_server_client }}'
+    recurse: true
+
+- name: Set correct permissions for config sync directory
+  file:
+    path: '{{ ansistrano_release_path.stdout }}/config/sync'
+    owner: '{{ vault_server_domain }}'
+    group: '{{ vault_server_client }}'
+    mode: '0755'
+    recurse: true
+  tags:
+    - set_permissions
+
+# Unarchive file sql from GZIP
+- name: Extract SQL file from Gzip archive using Drush Shell
+  ansible.builtin.shell: 'gunzip -c {{ ansistrano_release_path.stdout }}/sql/db.sql.gz > {{ ansistrano_release_path.stdout }}/sql/db.sql'
+  # when: vault_mode == 'install'
+  tags:
+    - unarchive_db
+
+- name: Ensure PyMySQL is installed on the target
+  ansible.builtin.apt:
+    name: python3-pymysql
+    state: present
+  tags:
+    - db_update
+
+- name: Import MySQL Database
+  ansible.builtin.mysql_db:
+    name: '{{ vault_database_name }}'
+    login_user: '{{ vault_database_user }}'
+    login_password: '{{ vault_database_password }}'
+    state: import
+    target: '{{ ansistrano_release_path.stdout }}/sql/db.sql'
+  tags:
+    - db_update
+
+# Add authentication to .htaccess and create .htpasswd
+- name: Create .htpasswd file
+  copy:
+    dest: '{{ ansistrano_release_path.stdout }}/web/.htpasswd'
+    content: '{{ vault_htpasswd_user }}:{{ vault_htpasswd_pass }}'
+    owner: '{{ vault_server_domain }}'
+    group: '{{ vault_server_client }}'
+    mode: '0644'
+  tags: auth
+
+#Insert authentication  lines to .htaccess
+- name: Insert authentication lines at the top of .htaccess
+  shell: |
+    if [ -f {{ ansistrano_release_path.stdout }}/web/.htaccess ]; then
+      sed -i \
+        '1iAuthName "Usuari autoritzat"\n\
+        AuthType Basic\n\
+        AuthUserFile {{ ansistrano_release_path.stdout }}/web/.htpasswd\n\
+        Require valid-user' \
+        {{ ansistrano_release_path.stdout }}/web/.htaccess
+    else
+      echo "Error: .htaccess file not found." >&2
+      exit 1
+    fi
+  args:
+    executable: /bin/bash
+    chdir: '{{ ansistrano_release_path.stdout }}/web'
+  tags: auth
+
+# Remove .htpasswd file
+- name: Remove .htpasswd file
+  file:
+    path: '{{ ansistrano_release_path.stdout }}/web/.htpasswd'
+    state: absent
+  tags: auth_cleanup
+
+# Remove authentication lines from .htaccess
+- name: Remove authentication lines from .htaccess
+  shell: |
+    if [ -f {{ ansistrano_release_path.stdout }}/web/.htaccess ]; then
+      sed -i '/^AuthName "Usuari autoritzat"/,+3d' {{ ansistrano_release_path.stdout }}/web/.htaccess
+    else
+      echo "Error: .htaccess file not found." >&2
+      exit 1
+    fi
+  args:
+    executable: /bin/bash
+    chdir: '{{ ansistrano_release_path.stdout }}/web'
+  tags: auth_cleanup
+
+# Synchronize assets files to the remote server and show progress
+- name: Deploy assets files to the remote server using rsync
+  command: >
+    rsync -avz --delete --progress --chmod=ugo=rwX
+    -e "ssh -p {{ ansible_remote_host_port }}"
+    {{ansistrano_deploy_from}}/default/files/
+    {{ansible_ssh_user}}@{{ ansible_remote_host }}:{{ ansistrano_shared_path }}/default/files/
+  delegate_to: localhost
+  tags:
+    - deploy_assets
+
+# Add corret permissions to the settings.stage
+- name: Ensure the correct permissions for settings.stage.php
+  file:
+    path: '{{ ansistrano_shared_path }}/default/settings.stage.php'
+    mode: '0644'
+  tags:
+    - ideploy
+    - s_stage
+
+# Add corret permissions to the settings.live
+- name: Ensure the correct permissions for settings.live.php
+  file:
+    path: '{{ ansistrano_shared_path }}/default/settings.live.php'
+    mode: '0644'
+  tags:
+    - ideploy
+    - s_live
+
+- name: Ensure the correct permissions for settings.php
+  file:
+    path: '{{ ansistrano_release_path.stdout }}/default/settings.php'
+    mode: '0644'
+  tags:
+    - ideploy
