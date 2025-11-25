@@ -14,7 +14,7 @@
     - clean_up
 
 - name: Change ownership of old release files
-  command: chown -R {{ vault_server_domain }}:{{ vault_server_client }} {{ item }}
+  command: chown -R {{ ansible_user }}:{{ vault_server_group }} {{ item }}
   with_items: '{{ old_releases_list }}'
   when: old_releases_list | length > 0
   tags:

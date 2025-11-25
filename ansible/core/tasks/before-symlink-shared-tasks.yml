@@ -2,21 +2,29 @@
 # before-symlink-shared-tasks
 
 # Database backup
+- name: Check if current release exists
+  stat:
+    path: '{{ vault_project_root }}/current'
+  register: current_release
+  tags:
+    - import_config
+
 - name: Clearing Drupal cache using Drush on current release
   shell: |
-    /{{vault_server_root_path}}/{{ vault_server_client }}/{{ vault_server_domain }}/current/vendor/bin/drush cr
+    {{ vault_project_root }}/current/vendor/bin/drush cr
   args:
     chdir: '{{ ansistrano_current_dir }}'
     executable: /bin/bash
+  when: current_release.stat.exists
   tags:
     - import_config
 
 - name: Ensure backup directory exists
   file:
-    path: '/{{vault_server_root_path}}/{{ vault_server_client }}/{{ vault_server_domain }}/private/db_backups'
+    path: '{{ vault_project_root | dirname | dirname }}/ansible-backups'
     state: directory
-    owner: '{{ vault_server_domain }}'
-    group: '{{ vault_server_client }}'
+    owner: '{{ ansible_user }}'
+    group: '{{ vault_server_group }}'
     mode: '0750'
   tags:
     - import_config
@@ -25,7 +33,7 @@
   shell: |
     mysqldump -u {{ vault_database_user }} -p'{{ vault_database_password }}' \
     -h 127.0.0.1 -P {{ vault_database_port }} {{ vault_database_name }} \
-    | gzip > /{{vault_server_root_path}}/{{ vault_server_client }}/{{ vault_server_domain }}/private/db_backups/db_backup_{{ ansible_date_time.iso8601_basic | regex_replace('T', '_') | regex_replace('\\..*$', '') }}.sql.gz
+    | gzip > {{ vault_project_root | dirname | dirname }}/ansible-backups/db_backup_{{ ansible_date_time.iso8601_basic | regex_replace('T', '_') | regex_replace('\\..*$', '') }}.sql.gz
   args:
     executable: /bin/bash
   tags:
@@ -34,7 +42,7 @@
 # Clean up old backups (keep 5 newest)
 - name: Find all database backup files
   find:
-    paths: '/{{vault_server_root_path}}/{{ vault_server_client }}/{{ vault_server_domain }}/private/db_backups'
+    paths: '{{ vault_project_root | dirname | dirname }}'
     patterns: 'db_backup_*.sql.gz'
     age: 0
     age_stamp: mtime
@@ -69,11 +77,11 @@
 
 - name: Set directory permissions for ansistrano_shared_path
   file:
-    path: '{{ ansistrano_release_path.stdout }}/default/files'
+    path: '{{ ansistrano_release_path.stdout }}/web/sites/default/files'
     mode: '0755'
     state: directory
-    owner: '{{ vault_server_domain }}'
-    group: '{{ vault_server_client }}'
+    owner: '{{ ansible_user }}'
+    group: '{{ vault_server_group }}'
     recurse: true
 
 - name: Ensure properly permissions to vendor's directory
@@ -81,8 +89,8 @@
     path: '{{ ansistrano_release_path.stdout }}/vendor'
     mode: '0755'
     state: directory
-    owner: '{{ vault_server_domain }}'
-    group: '{{ vault_server_client }}'
+    owner: '{{ ansible_user }}'
+    group: '{{ vault_server_group }}'
     recurse: true
 
 - name: Ensure properly permissions to Drupal's root /web directory
@@ -90,15 +98,15 @@
     path: '{{ ansistrano_release_path.stdout }}/web'
     mode: '0755'
     state: directory
-    owner: '{{ vault_server_domain }}'
-    group: '{{ vault_server_client }}'
+    owner: '{{ ansible_user }}'
+    group: '{{ vault_server_group }}'
     recurse: true
 
 - name: Set correct permissions for config sync directory
   file:
     path: '{{ ansistrano_release_path.stdout }}/config/sync'
-    owner: '{{ vault_server_domain }}'
-    group: '{{ vault_server_client }}'
+    owner: '{{ ansible_user }}'
+    group: '{{ vault_server_group }}'
     mode: '0755'
     recurse: true
   tags:
@@ -112,8 +120,8 @@
     - unarchive_db
 
 - name: Ensure PyMySQL is installed on the target
-  ansible.builtin.apt:
-    name: python3-pymysql
+  ansible.builtin.pip:
+    name: PyMySQL
     state: present
   tags:
     - db_update
@@ -133,8 +141,8 @@
   copy:
     dest: '{{ ansistrano_release_path.stdout }}/web/.htpasswd'
     content: '{{ vault_htpasswd_user }}:{{ vault_htpasswd_pass }}'
-    owner: '{{ vault_server_domain }}'
-    group: '{{ vault_server_client }}'
+    owner: '{{ ansible_user }}'
+    group: '{{ vault_server_group }}'
     mode: '0644'
   tags: auth
 
@@ -182,9 +190,9 @@
 - name: Deploy assets files to the remote server using rsync
   command: >
     rsync -avz --delete --progress --chmod=ugo=rwX
-    -e "ssh -p {{ ansible_remote_host_port }}"
-    {{ansistrano_deploy_from}}/default/files/
-    {{ansible_ssh_user}}@{{ ansible_remote_host }}:{{ ansistrano_shared_path }}/default/files/
+    -e "ssh -p {{ ansible_remote_port }}"
+    {{ansistrano_deploy_from}}/web/sites/default/files/
+    {{ansible_ssh_user}}@{{ansible_remote_host}}:{{ ansistrano_shared_path }}/web/sites/default/files/
   delegate_to: localhost
   tags:
     - deploy_assets
@@ -192,7 +200,7 @@
 # Add corret permissions to the settings.stage
 - name: Ensure the correct permissions for settings.stage.php
   file:
-    path: '{{ ansistrano_shared_path }}/default/settings.stage.php'
+    path: '{{ ansistrano_shared_path }}/web/sites/default/settings.stage.php'
     mode: '0644'
   tags:
     - ideploy
@@ -201,7 +209,7 @@
 # Add corret permissions to the settings.live
 - name: Ensure the correct permissions for settings.live.php
   file:
-    path: '{{ ansistrano_shared_path }}/default/settings.live.php'
+    path: '{{ ansistrano_shared_path }}/web/sites/default/settings.live.php'
     mode: '0644'
   tags:
     - ideploy
@@ -209,7 +217,7 @@
 
 - name: Ensure the correct permissions for settings.php
   file:
-    path: '{{ ansistrano_release_path.stdout }}/default/settings.php'
+    path: '{{ ansistrano_release_path.stdout }}/web/sites/default/settings.php'
     mode: '0644'
   tags:
     - ideploy

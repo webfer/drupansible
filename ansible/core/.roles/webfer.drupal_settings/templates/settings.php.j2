@@ -5,14 +5,14 @@
 {% for key, values in item.1.settings.databases.items() %}
 {% for target, values in values.items() %}
 $databases['{{ key }}']['{{ target }}'] = array(
-  'driver' => '{{ values.driver|default('mysql') }}',
-  'host' => '{{ values.host|default('localhost') }}',
-  'port' => '{{ values.port }}',
-  'prefix' => '{{ values.prefix }}',
-  'collation' => '{{ values.collation }}',  
-  'database' => '{{ values.database }}',
-  'username' => '{{ values.username }}',
-  'password' => '{{ values.password }}',
+  'driver'    => '{{ values.driver | default("mysql") }}',
+  'host'      => '{{ values.host | default("localhost") }}',
+  'port'      => '{{ values.port }}',
+  'prefix'    => '{{ values.prefix }}',
+  'collation' => '{{ values.collation }}',
+  'database'  => '{{ values.database }}',
+  'username'  => '{{ values.username }}',
+  'password'  => '{{ values.password }}',
   'init_commands' => [
     'isolation_level' => '{{ values.isolevel }}',
   ],
@@ -44,5 +44,5 @@ $settings['trusted_host_patterns'] = array(
 {% endif %}
 
 {% if item.1.settings.extra_parameters is defined %}
-  {{ item.1.settings.extra_parameters|indent(0) }}
+{{ item.1.settings.extra_parameters }}
 {% endif %}

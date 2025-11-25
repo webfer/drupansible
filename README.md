@@ -59,7 +59,7 @@ To provide Ansible with the actual server data. Follow these steps:
 
 Within your project, locate the following directories and files:
 
-<img src="tools/assets/images/ansible-structure.png" width="650">
+<img src="ansible/assets/images/ansible-structure.png" width="650">
 
 1. **Tools / Ansible**
 

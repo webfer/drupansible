@@ -24,10 +24,10 @@
       - "--exclude='README.md'"
       - "--exclude='bitbucket-pipelines.yml'"
       - "--exclude='.vscode'"
-      - "--exclude='/default/files'"
+      - "--exclude='web/sites/default/files'"
       - "--exclude='web/themes/custom/{{ vault_theme_name }}/node_modules'"
-      - "--exclude='/default/settings.ddev.php'"
-      - "--exclude='/default/settings.local.php'"
+      - "--exclude='web/sites/default/settings.ddev.php'"
+      - "--exclude='web/sites/default/settings.local.php'"
 
     ansistrano_deploy_from: '{{ playbook_dir }}/../../'
     ansistrano_deploy_to: '{{ project_deploy_path }}'
@@ -38,9 +38,10 @@
     ansistrano_after_update_code_tasks_file: '{{ playbook_dir }}/tasks/after-update-code-tasks.yml'
     ansistrano_before_symlink_tasks_file: '{{ playbook_dir }}/tasks/before-symlink-tasks.yml'
     ansistrano_before_cleanup_tasks_file: '{{ playbook_dir }}/tasks/before-cleanup-tasks.yml'
+    ansistrano_after_symlink_tasks_file: '{{ playbook_dir }}/tasks/ansistrano_after_symlink_tasks_file.yml'
 
     ansistrano_shared_paths:
-      - '/default/files'
+      - 'web/sites/default/files'
 
     ansistrano_shared_files:
-      - '/default/settings.live.php'
+      - 'web/sites/default/settings.live.php'

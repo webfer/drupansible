@@ -10,8 +10,8 @@ drupal_install: false
 drupal_settings:
   - drupal_root: '{{ release_drupal_path }}'
     sites:
-      - name: default
-        filename: settings.live.php
+      - name: 'default'
+        filename: 'settings.live.php'
         settings:
           databases:
             default:

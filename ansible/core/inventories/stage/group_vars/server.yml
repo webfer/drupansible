@@ -1,23 +1,22 @@
 ---
-vault_database_name: xxxxx
-vault_database_user: xxxxx
-vault_database_password: 'xxxxx'
-vault_database_port: xxxxx
+vault_database_name: xxxxxxyyyyyzzzzz
+vault_database_user: xxxxxxyyyyyzzzzz
+vault_database_password: 'xxxxxxyyyyyzzzzz'
+vault_database_port: xxxxxxyyyyyzzzzz
 vault_database_prefix: ''
 vault_database_collation: 'utf8mb4_general_ci'
 
-vault_server_root_path: 'xxxxx'
-vault_server_client: xxxxx
-vault_server_domain: xxxxx
+vault_server_group: xxxxxxyyyyyzzzzz
+vault_project_root: xxxxxxyyyyyzzzzz
 vault_keep_releases: 2
 vault_backup_keep_count: 5
 
-ansible_ssh_user: xxxxx
-ansible_remote_host: xxxxx
-ansible_remote_host_port: xxxxx
-vault_theme_name: xxxxx
-vault_htpasswd_user: xxxxx
-vault_htpasswd_pass: 'xxxxx'
+ansible_user: xxxxxxyyyyyzzzzz
+ansible_host: xxxxxxyyyyyzzzzz
+ansible_port: xxxxxxyyyyyzzzzz
+vault_theme_name: xxxxxxyyyyyzzzzz
+vault_htpasswd_user: xxxxxxyyyyyzzzzz
+vault_htpasswd_pass: 'xxxxxxyyyyyzzzzz'
 # Allowed Variables
 
 # vault_database_name: Database name.
@@ -26,14 +25,13 @@ vault_htpasswd_pass: 'xxxxx'
 # vault_database_port: Database port. Usually shoul be 3306.
 # vault_database_prefix: Database prefix. If you dosen't use prefix for you database, you can leave this fiel empty.
 # vault_database_collation: Database collation. For Drupal, this field can be "utf8mb4_general_ci" as default.
-# vault_server_root_path: Server root path it is the root path of the remote server. Example: "home" or "var/www/html" (Important: Make sure the variable does not start or end with a "/" character.)
-# vault_server_client: Server client in the remote server. Example: client1 (The most common value is the user accoutn name)
-# vault_server_domain: Server domain in the remote server. Example: mysite.example.com (Without protocol http:// or https://)
-# vault_backup_keep_count: Number ot backups you want to keep
+# vault_server_group: Server group in the remote server. Example: client1 (The most common value is the user accoutn name)
+# vault_project_root: Project root path it is the root path of the remote server where the project is located. Example: "/home/client1/mysite.example.com"
 # vault_keep_releases: Number of releases that you want to use. Example: 2
-# ansible_ssh_user: SSH user name.
-# ansible_remote_host: IP address or the server domain. Example: sv5017.byethost5017.org
-# ansible_remote_host_port: Server port. Example: 61022
+# vault_backup_keep_count: Number ot backups you want to keep
+# ansible_user: SSH user name.
+# ansible_host: IP address or the server domain. Example: sv5017.byethost5017.org
+# ansible_port: Server port. Example: 61022
 # vault_theme_name: Custom theme name - If you are using https://www.drupal.org/project/drupy the value for this variable should be "drupy" or your custom theme name.
-# vault_htpasswd_user: ONLY in Stage environment. It must be htpasswd uer by default: Exmaple: myhtpasswduser
-# vault_htpasswd_pass: ONLY in Stage environment. Drupal htpasswd. (we recommend you use bcrypt hash for the password. You can generarte it using this command in the terminal: htpasswd -nbBC 12 myhtpasswduser mypassword123)
+# vault_htpasswd_user: It must be htpasswd uer by default: Example: myhtpasswduser. This feature is used to protect the site from unauthorized access. It will work ONLY in the stage environment.
+# vault_htpasswd_pass: Drupal htpasswd. (we recommend you use bcrypt hash for the password. You can generarte it using this command in the terminal: htpasswd -nbBC 12 myhtpasswduser mypassword123)

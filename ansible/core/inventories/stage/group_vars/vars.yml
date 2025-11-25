@@ -6,10 +6,10 @@ database_password: '{{ vault_database_password }}'
 database_user: '{{ vault_database_user }}'
 
 # Path to the  deploy directory
-project_deploy_path: /{{vault_server_root_path}}/{{vault_server_client}}/{{vault_server_domain}}/
+project_deploy_path: '{{vault_project_root}}'
 
 # Path to the root directory
-project_web_root: /{{vault_server_root_path}}/{{vault_server_client}}/{{vault_server_domain}}/
+project_web_root: '{{vault_project_root}}'
 
 # Path to the release directory
-project_web_releases_dir: /{{vault_server_root_path}}/{{vault_server_client}}/{{vault_server_domain}}/releases/
+project_web_releases_dir: '{{vault_project_root}}/releases/'

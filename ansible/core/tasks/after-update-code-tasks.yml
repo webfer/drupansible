@@ -1,7 +1,7 @@
 ---
 - name: Generate settings.php file
   include_role:
-    name: opdavies.drupal_settings_files
+    name: webfer.drupal_settings
   tags:
     - ideploy
 
@@ -13,14 +13,14 @@
 # Create the needed directories.
 - name: Check if the "files" directory exists
   stat:
-    path: '{{ ansistrano_shared_path }}/default/files'
+    path: '{{ ansistrano_shared_path }}/web/sites/default/files'
   register: result
   tags:
     - ideploy
 
 - name: Creating the public files directory
   file:
-    path: '{{ ansistrano_shared_path }}/default/files'
+    path: '{{ ansistrano_shared_path }}/web/sites/default/files'
     state: directory
     recurse: no
     mode: 'u=rwx,g=rwx,o=rx'
@@ -45,6 +45,10 @@
   tags:
     - ideploy
 
+# DEBUG
+- name: Print project deploy path Path
+  debug:
+    msg: 'project deploy path Path: {{ project_deploy_path }}'
 # Create the needed shared files for the stage environment.
 - name: Creating the needed shared files for the stage environment
   copy:
@@ -54,7 +58,7 @@
     mode: 'u=rw,g=r,o=r'
   loop:
     - src: '{{ project_deploy_path }}/default/settings.stage.php'
-      dest: '{{ ansistrano_shared_path }}/default/settings.stage.php'
+      dest: '{{ ansistrano_shared_path }}/web/sites/default/settings.stage.php'
   tags:
     - s_stage
 
@@ -67,6 +71,6 @@
     mode: 'u=rw,g=r,o=r'
   loop:
     - src: '{{ project_deploy_path }}/default/settings.live.php'
-      dest: '{{ ansistrano_shared_path }}/default/settings.live.php'
+      dest: '{{ ansistrano_shared_path }}/web/sites/default/settings.live.php'
   tags:
     - s_live

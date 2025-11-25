@@ -1,5 +1,0 @@
-2025-11-16 19:28:41,686 p=88662 u=tothom n=ansible |  [ERROR]: User interrupted execution
-
-2025-11-16 19:28:59,028 p=89619 u=tothom n=ansible | ERROR! Unable to read source file (/Users/tothom/Code/tothomweb/personal/drupansible/tools/ansible/inventories/stage/group_vars/server.yml): [Errno 2] No such file or directory: '/Users/tothom/Code/tothomweb/personal/drupansible/tools/ansible/inventories/stage/group_vars/server.yml'
-2025-11-16 19:30:06,210 p=92126 u=tothom n=ansible | Encryption successful
-2025-11-16 19:30:25,660 p=92851 u=tothom n=ansible | Decryption successful
