@@ -27,7 +27,6 @@ DrupAnsible is a comprehensive Ansible-based deployment automation tool designed
 Before getting started, ensure the following prerequisites are met:
 
 - **Ansible** (version 2.9 or higher) installed on your local machine
-  - Follow the instructions: [Ansible-drupal](https://intranet.tothomweb.com/node/342)
 - **Ansistrano Deploy** role installed
   - Installation guide: [Ansistrano-deploy](https://github.com/ansistrano/deploy)
 - **Python 3.11** on the remote server (configured in `ansible.cfg`)
@@ -213,85 +212,54 @@ Encrypted sensitive data in `server.yml` files:
 
 ### Editing Encrypted Variables
 
-To edit vault-encrypted files:
+The MCP Ansible-Drupal server provides tools to manage vault-encrypted configuration files securely. You can edit encrypted variables for both staging and production environments through the MCP interface.
 
-```bash
-ansible-vault edit ansible/core/inventories/production/group_vars/server.yml
-```
+For manual editing, you can use Ansible Vault commands directly if needed.
 
 <br>
 
 ## 🚀 Deployment
 
-### Command Options
+### Deployment with MCP Ansible-Drupal
 
-DrupAnsible supports the following deployment options:
+Deployments are managed through the **[MCP Ansible-Drupal](https://github.com/webfer/MCP-Ansible-Drupal)** server, which provides an intuitive interface for executing deployments.
 
-| Option          | Description                                                        |
-| --------------- | ------------------------------------------------------------------ |
-| `--stage`       | Deploy to staging environment with optional basic authentication   |
-| `--live`        | Deploy to production environment                                   |
-| `--install`     | Initial deployment with complete database import                   |
-| `--update`      | Update deployment with configuration import and database updates   |
-| `--with-assets` | Synchronize assets folder (files) using rsync with `--delete` flag |
+### Deployment Options
+
+The MCP server supports the following deployment configurations:
+
+| Option          | Description                                                      |
+| --------------- | ---------------------------------------------------------------- |
+| **Environment** | Choose between `staging` or `production`                         |
+| **Mode**        | `install` (initial deployment) or `update` (subsequent updates)  |
+| **Assets**      | Option to synchronize assets folder (files) with `--delete` flag |
 
 ### Initial Deployment
 
+Use the MCP Ansible-Drupal tools to perform your initial deployment:
+
 #### Staging Environment
 
-**Without assets:**
-
-```bash
-ansible-deploy --stage --install
-```
-
-**With assets (includes files sync):**
-
-```bash
-ansible-deploy --stage --install --with-assets
-```
+- Deploy to staging with database import
+- Optionally include asset synchronization
+- Basic authentication can be configured for staging
 
 #### Production Environment
 
-**Without assets:**
-
-```bash
-ansible-deploy --live --install
-```
-
-**With assets:**
-
-```bash
-ansible-deploy --live --install --with-assets
-```
+- Deploy to production with database import
+- Optionally include asset synchronization
+- Uses production-specific configuration
 
 ### Regular Updates
 
-After the initial deployment, use the `--update` flag for subsequent deployments:
+For subsequent deployments after the initial setup:
 
-**Staging:**
+- Use the MCP tools to deploy updates
+- Configuration changes are automatically imported
+- Database updates are applied
+- Optional asset synchronization available
 
-```bash
-ansible-deploy --stage --update
-```
-
-**Staging with assets:**
-
-```bash
-ansible-deploy --stage --update --with-assets
-```
-
-**Production:**
-
-```bash
-ansible-deploy --live --update
-```
-
-**Production with assets:**
-
-```bash
-ansible-deploy --live --update --with-assets
-```
+Refer to the **[MCP Ansible-Drupal documentation](https://github.com/webfer/MCP-Ansible-Drupal)** for detailed usage instructions.
 
 <br>
 
@@ -377,14 +345,11 @@ web/sites/default/settings.local.php
 
 ## 🔙 Rollback
 
-If something goes wrong, you can quickly rollback to the previous release:
+If something goes wrong, you can quickly rollback to the previous release using the MCP Ansible-Drupal tools.
 
-```bash
-cd ansible/core
-ansible-playbook rollback.yml -i inventories/production/inventory.yml
-```
+The rollback functionality will restore the previous symlinked release without touching the database, ensuring a safe recovery to the last known working version.
 
-This will restore the previous symlinked release without touching the database.
+Refer to the **[MCP Ansible-Drupal documentation](https://github.com/webfer/MCP-Ansible-Drupal)** for rollback instructions.
 
 <br>
 
@@ -410,43 +375,19 @@ Monitor the deployment process output for:
 
 ## 🛠️ Advanced Usage
 
-### Using Ansible Tags
+### Using Ansible Tags with MCP
 
-Run specific parts of the deployment process using tags:
+The MCP Ansible-Drupal server allows you to run specific parts of the deployment process using Ansible tags. This gives you fine-grained control over deployment operations.
 
-**Database import only:**
+**Available tag operations:**
 
-```bash
-ansible-playbook ansible/core/stage-deploy.yml -i ansible/core/inventories/stage/inventory.yml --tags "db_update"
-```
+- **Database import** (`db_update`) - Import database only
+- **Configuration import** (`import_config`) - Import Drupal configuration only
+- **Translation updates** (`translations`) - Update translations only
+- **Deploy assets** (`deploy_assets`) - Synchronize files only
+- **Basic authentication** (`auth` / `auth_cleanup`) - Add or remove staging authentication
 
-**Configuration import only:**
-
-```bash
-ansible-playbook ansible/core/stage-deploy.yml -i ansible/core/inventories/stage/inventory.yml --tags "import_config"
-```
-
-**Translation updates only:**
-
-```bash
-ansible-playbook ansible/core/stage-deploy.yml -i ansible/core/inventories/stage/inventory.yml --tags "translations"
-```
-
-**Deploy assets only:**
-
-```bash
-ansible-playbook ansible/core/stage-deploy.yml -i ansible/core/inventories/stage/inventory.yml --tags "deploy_assets"
-```
-
-**Add/Remove basic authentication (staging):**
-
-```bash
-# Add authentication
-ansible-playbook ansible/core/stage-deploy.yml -i ansible/core/inventories/stage/inventory.yml --tags "auth"
-
-# Remove authentication
-ansible-playbook ansible/core/stage-deploy.yml -i ansible/core/inventories/stage/inventory.yml --tags "auth_cleanup"
-```
+Refer to the **[MCP Ansible-Drupal documentation](https://github.com/webfer/MCP-Ansible-Drupal)** for instructions on executing tag-specific deployments.
 
 ### Ansible Configuration
 
@@ -479,49 +420,36 @@ Key settings in `ansible.cfg`:
 
 **Problem**: SSH connection fails
 
-```bash
-# Solution: Test SSH connection manually
-ssh -p PORT user@hostname
-
-# Check SSH config in inventory.yml
-```
+- **Solution**: Verify SSH configuration in your inventory files
+- Check that SSH keys are properly configured
+- Ensure the remote server is accessible
+- The MCP Ansible-Drupal tools will help diagnose connection issues
 
 **Problem**: Vault decryption fails
 
-```bash
-# Solution: Verify vault_pass.txt exists and contains correct password
-cat vault_pass.txt
-
-# Try manual decryption
-ansible-vault view ansible/core/inventories/stage/group_vars/server.yml
-```
+- **Solution**: Verify `vault_pass.txt` exists and contains the correct password
+- Check file permissions on the vault password file
+- Use the MCP tools to validate vault configuration
 
 **Problem**: Database import fails
 
-```bash
-# Solution: Check database credentials
-# Verify PyMySQL is installed on remote server
-pip3 install PyMySQL
-```
+- **Solution**: Check database credentials in vault-encrypted files
+- Verify PyMySQL is installed on the remote server
+- Ensure database permissions are correct
+- Review the Ansible logs for detailed error messages
 
 **Problem**: Permission denied errors
 
-```bash
-# Solution: Check ownership and permissions
-ls -la /path/to/deployment/directory
-
-# Ensure ansible_user has proper permissions
-```
+- **Solution**: Verify ownership and permissions on deployment directories
+- Ensure the Ansible user has proper permissions
+- Check that the server group is correctly configured
 
 **Problem**: Configuration import conflicts
 
-```bash
-# Solution: Check Drupal configuration sync directory
-drush config:status
-
-# Export current config
-drush config:export
-```
+- **Solution**: Check Drupal configuration sync directory status
+- Review configuration differences using Drush
+- Resolve conflicts before deployment
+- Export current configuration if needed
 
 <br>
 
@@ -537,7 +465,7 @@ drush config:export
 
 ## 🤝 Contributing
 
-This Ansible application is specifically designed to streamline Drupal deployments to remote servers (Okitup hosting), providing a tailored solution for efficient and reliable deployment workflows.
+This Ansible application is specifically designed to streamline Drupal deployments to remote servers with the most common server configurations, providing a tailored solution for efficient and reliable deployment workflows.
 
 We encourage you to explore and utilize this application for your deployment needs. If you find it beneficial and wish to contribute to its development, your participation would be greatly appreciated. By collaborating, we can enhance the functionality and robustness of this application, benefiting the broader community and fostering a spirit of shared innovation.
 
